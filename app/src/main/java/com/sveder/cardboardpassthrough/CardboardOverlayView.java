@@ -101,6 +101,12 @@ public class CardboardOverlayView extends LinearLayout {
         mRightView.setColor(color);
     }
 
+    public void setImage(int img){
+        mLeftView.setImage(img);
+        mRightView.setImage(img);
+
+
+    }
     /**
      * A simple view group containing some horizontally centered text underneath a horizontally
      * centered image.
@@ -116,7 +122,7 @@ public class CardboardOverlayView extends LinearLayout {
             super(context, attrs);
             imageView = new ImageView(context, attrs);
             imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            imageView.setAdjustViewBounds(true);  // Preserve aspect ratio.
+            imageView.setAdjustViewBounds(true);  // Preserve aspect ratio
             addView(imageView);
 
             textView = new TextView(context, attrs);
@@ -128,7 +134,7 @@ public class CardboardOverlayView extends LinearLayout {
         }
 
         public void setColor(int color) {
-            imageView.setColorFilter(color);
+            //imageView.setColorFilter(color);
             textView.setTextColor(color);
         }
 
@@ -144,6 +150,9 @@ public class CardboardOverlayView extends LinearLayout {
             this.offset = offset;
         }
 
+        public void setImage(int img){
+            imageView.setImageResource(img);
+        }
         @Override
         protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
             // Width and height of this ViewGroup.

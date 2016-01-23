@@ -411,7 +411,6 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     @Override
 	public void onFrameAvailable(SurfaceTexture arg0) {
 		this.cardboardView.requestRender();
-		
 	}    	   
 
     /**
@@ -567,6 +566,8 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 //        }
 //        // Always give user feedback
 //        mVibrator.vibrate(50);
+        mOverlayView.setImage(R.drawable.ic_launcher);
+        //mOverlayView.show3DToast("You're Triggering Me!!!");
     }
 
 
