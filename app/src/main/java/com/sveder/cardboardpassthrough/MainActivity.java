@@ -16,13 +16,20 @@
 
 package com.sveder.cardboardpassthrough;
 //test
+
+import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.graphics.SurfaceTexture.OnFrameAvailableListener;
 import android.hardware.Camera;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.vrtoolkit.cardboard.CardboardActivity;
 import com.google.vrtoolkit.cardboard.CardboardView;
@@ -43,11 +50,42 @@ import javax.microedition.khronos.opengles.GL10;
  * A Cardboard sample application.
  */
 public class MainActivity extends CardboardActivity implements CardboardView.StereoRenderer, OnFrameAvailableListener {
-
+    private SensorManager mSensorManager;
     private static final String TAG = "MainActivity";
     private static final int GL_TEXTURE_EXTERNAL_OES = 0x8D65;
     private Camera camera;
 
+    //SENSOR RELATED STUFF YO
+    private final SensorEventListener mSensorListener = new SensorEventListener() {
+
+        public void onSensorChanged(SensorEvent se) {
+            float x = se.values[0];
+            float y = se.values[1];
+            float z = se.values[2];
+            System.out.println(se.values[0] + " " + se.values[1] + " " + se.values[2]);
+            //System.out.println("x: " + x + "y: " + y + "z: " + z);
+        }
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+            //if (mAccel > 2) {
+            //    Toast toast = Toast.makeText(getApplicationContext(), "x: " + x + "y: " + y + "z: " + z, Toast.LENGTH_LONG);
+            //    toast.show();
+            //}
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    @Override
+    protected void onPause() {
+        mSensorManager.unregisterListener(mSensorListener);
+        super.onPause();
+    }
+
+    //OTHER STUFF I DIDNT WRITE
 	private final String vertexShaderCode =
 	        "attribute vec4 position;" +
 	        "attribute vec2 inputTextureCoordinate;" +
@@ -83,24 +121,24 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     	 1.0f, -1.0f,   // 1. right - mid
     	-1.0f, 1.0f,   // 2. left - top
     	 1.0f, 1.0f,   // 3. right - top
-//    	 
+//
 //    	 -1.0f, -1.0f, //4. left - bottom
 //    	 1.0f , -1.0f, //5. right - bottom
-    	
-    	
+
+
 //       -1.0f, -1.0f,  // 0. left-bottom
 //        0.0f, -1.0f,   // 1. mid-bottom
 //       -1.0f,  1.0f,   // 2. left-top
 //        0.0f,  1.0f,   // 3. mid-top
-        
+
         //1.0f, -1.0f,  // 4. right-bottom
         //1.0f, 1.0f,   // 5. right-top
-        
-    };
-    
-    
 
-    
+    };
+
+
+
+
     //, 1, 4, 3, 4, 5, 3
 //    private short drawOrder[] =  {0, 1, 2, 1, 3, 2 };//, 4, 5, 0, 5, 0, 1 }; // order to draw vertices
     private short drawOrder[] =  {0, 2, 1, 1, 2, 3 }; // order to draw vertices
@@ -110,8 +148,8 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 	 0.0f, 1.0f,  // A. left-bottom
 	   1.0f, 1.0f,  // B. right-bottom
 	   0.0f, 0.0f,  // C. left-top
-	   1.0f, 0.0f   // D. right-top  
-        
+	   1.0f, 0.0f   // D. right-top
+
 //        1.0f,  1.0f,
 //        1.0f,  0.0f,
 //        0.0f,  1.0f,
@@ -121,7 +159,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     private final int vertexStride = COORDS_PER_VERTEX * 4; // 4 bytes per vertex
 
     private ByteBuffer indexBuffer;    // Buffer for index-array
-    
+
     private int texture;
 
 
@@ -150,7 +188,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
             Log.w("MainActivity","CAM LAUNCH FAILED");
         }
     }
-	
+
     static private int createTexture()
     {
         int[] texture = new int[1];
@@ -158,7 +196,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         GLES20.glGenTextures(1,texture, 0);
         GLES20.glBindTexture(GL_TEXTURE_EXTERNAL_OES, texture[0]);
         GLES20.glTexParameterf(GL_TEXTURE_EXTERNAL_OES,
-             GL10.GL_TEXTURE_MIN_FILTER,GL10.GL_LINEAR);        
+             GL10.GL_TEXTURE_MIN_FILTER,GL10.GL_LINEAR);
         GLES20.glTexParameterf(GL_TEXTURE_EXTERNAL_OES,
              GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
      GLES20.glTexParameteri(GL_TEXTURE_EXTERNAL_OES,
@@ -169,7 +207,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         return texture[0];
     }
 
-	
+
     /**
      * Converts a raw text file, saved as a resource, into an OpenGL ES shader
      * @param type The type of shader we will be creating.
@@ -237,6 +275,13 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 //
         mOverlayView = (CardboardOverlayView) findViewById(R.id.overlay);
         mOverlayView.show3DToast("Pull the magnet when you find an object.");
+
+         /* Set up sensor stuff */
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mSensorManager.registerListener(mSensorListener, mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR), SensorManager.SENSOR_DELAY_NORMAL);
+//        mAccel = 0.00f;
+//        mAccelCurrent = SensorManager.GRAVITY_EARTH;
+//        mAccelLast = SensorManager.GRAVITY_EARTH;
     }
 
     @Override
@@ -258,20 +303,20 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     public void onSurfaceCreated(EGLConfig config) {
         Log.i(TAG, "onSurfaceCreated");
         GLES20.glClearColor(0.1f, 0.1f, 0.1f, 0.5f); // Dark background so text shows up well
-        
+
         ByteBuffer bb = ByteBuffer.allocateDirect(squareVertices.length * 4);
         bb.order(ByteOrder.nativeOrder());
         vertexBuffer = bb.asFloatBuffer();
         vertexBuffer.put(squareVertices);
         vertexBuffer.position(0);
-        
+
 
         ByteBuffer dlb = ByteBuffer.allocateDirect(drawOrder.length * 2);
         dlb.order(ByteOrder.nativeOrder());
         drawListBuffer = dlb.asShortBuffer();
         drawListBuffer.put(drawOrder);
         drawListBuffer.position(0);
-        
+
 
         ByteBuffer bb2 = ByteBuffer.allocateDirect(textureVertices.length * 4);
         bb2.order(ByteOrder.nativeOrder());
@@ -286,10 +331,10 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         GLES20.glAttachShader(mProgram, vertexShader);   // add the vertex shader to program
         GLES20.glAttachShader(mProgram, fragmentShader); // add the fragment shader to program
         GLES20.glLinkProgram(mProgram);
-        
+
         texture = createTexture();
         startCamera(texture);
-        
+
 
 //        ByteBuffer bbVertices = ByteBuffer.allocateDirect(DATA.CUBE_COORDS.length * 4);
 //        bbVertices.order(ByteOrder.nativeOrder());
@@ -376,7 +421,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 //        return "";
 //    }
 //
-    
+
     /**
      * Prepares OpenGL ES before we draw a frame.
      * @param headTransform The head transformation in the new frame.
@@ -400,18 +445,18 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 //        headTransform.getHeadView(mHeadView, 0);
 //
 //        checkGLError("onReadyToDraw");
-    	
+
     	float[] mtx = new float[16];
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
         surface.updateTexImage();
-        surface.getTransformMatrix(mtx); 
-    	
+        surface.getTransformMatrix(mtx);
+
     }
-	
+
     @Override
 	public void onFrameAvailable(SurfaceTexture arg0) {
 		this.cardboardView.requestRender();
-	}    	   
+	}
 
     /**
      * Draws a frame for an eye. The transformation for that eye (from the camera) is passed in as
@@ -421,7 +466,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     @Override
     public void onDrawEye(EyeTransform transform) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-        
+
         GLES20.glUseProgram(mProgram);
 
         GLES20.glActiveTexture(GL_TEXTURE_EXTERNAL_OES);
@@ -433,7 +478,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         GLES20.glEnableVertexAttribArray(mPositionHandle);
         GLES20.glVertexAttribPointer(mPositionHandle, COORDS_PER_VERTEX, GLES20.GL_FLOAT,
         		false,vertexStride, vertexBuffer);
-        
+
 
         mTextureCoordHandle = GLES20.glGetAttribLocation(mProgram, "inputTextureCoordinate");
         GLES20.glEnableVertexAttribArray(mTextureCoordHandle);
@@ -451,7 +496,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         // Disable vertex array
         GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(mTextureCoordHandle);
-        
+
         Matrix.multiplyMM(mView, 0, transform.getEyeView(), 0, mCamera, 0);
 
 
