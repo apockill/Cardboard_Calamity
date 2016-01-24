@@ -25,12 +25,17 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.MediaRecorder;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
-import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
 import com.google.vrtoolkit.cardboard.CardboardActivity;
 import com.google.vrtoolkit.cardboard.CardboardView;
 import com.google.vrtoolkit.cardboard.EyeTransform;
@@ -38,6 +43,7 @@ import com.google.vrtoolkit.cardboard.HeadTransform;
 import com.google.vrtoolkit.cardboard.Viewport;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -54,8 +60,9 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     private static final String TAG = "MainActivity";
     private static final int GL_TEXTURE_EXTERNAL_OES = 0x8D65;
     private static final int baseline = 3;  //The base angle for your head
-    private static final int angDiff  = 1;  //The "diff" between the angle and different menu items
+    private static final float angDiff  = 1.5f;  //The "diff" between the angle and different menu items
     private Camera camera;
+    private MediaRecorder mMediaRecorder;
 
 
     //SENSOR RELATED STUFF YO
@@ -66,18 +73,30 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
             //System.out.println(angle);
             float menuLine = baseline - angDiff*2;
             if(angle < menuLine){  //If you are in the "menu item zone"
-                if(angle < menuLine - angDiff * 3){
+                if(angle < menuLine - angDiff * 5) {
+                    mOverlayView.setImage(R.drawable.vision_button);
+                    mOverlayView.show3DToast("True Vision");
+
+                }else if(angle < menuLine - angDiff * 4) {
                     mOverlayView.setImage(R.drawable.safety_button);
+                    mOverlayView.show3DToast("Shield");
+
+                }else if(angle < menuLine - angDiff * 3){
+                    mOverlayView.setImage(R.drawable.lag_button);
+                    mOverlayView.show3DToast("Lag Attack");
+
                 }else if(angle < menuLine - angDiff * 2){
                     mOverlayView.setImage(R.drawable.invert_button);
+                    mOverlayView.show3DToast("Invert Attack");
+
                 }else if(angle < menuLine - angDiff) {
                     mOverlayView.setImage(R.drawable.bw_button);
+                    mOverlayView.show3DToast("Black/White Attack");
                 }
-
-
 
             }else{  //Clear the pictures if you are not in the "menu item zone"
                 mOverlayView.setImage(-1);
+                mOverlayView.show3DToast("");
             }
         }
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -149,9 +168,6 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
 
 
-
-    //, 1, 4, 3, 4, 5, 3
-//    private short drawOrder[] =  {0, 1, 2, 1, 3, 2 };//, 4, 5, 0, 5, 0, 1 }; // order to draw vertices
     private short drawOrder[] =  {0, 2, 1, 1, 2, 3 }; // order to draw vertices
     private short drawOrder2[] = {2, 0, 3, 3, 0, 1}; // order to draw vertices
 
@@ -182,15 +198,42 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 	private float[] mView;
 	private float[] mCamera;
 
-	public void startCamera(int texture)
-    {
+	public void startCamera(int texture){
         surface = new SurfaceTexture(texture);
         surface.setOnFrameAvailableListener(this);
 
         camera = Camera.open();
 
+        //mMediaRecorder.setPreviewDisplay(mPrevie)
+        StringRequest request = new StringRequest(Request.Method.POST, "http://52.11.226.33",
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        System.out.println(response);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                System.out.println(error);
+            }
+        }) {
+            @Override
+            public byte[] getBody() {
+                return "{}".getBytes();
+            }
+        };
+
         try
         {
+//            Socket socket = new Socket("52.11.226.33", 8000);
+//            ParcelFileDescriptor pdf = ParcelFileDescriptor.fromSocket(socket);
+//            mMediaRecorder = new MediaRecorder();
+//            camera.unlock();
+//            mMediaRecorder.setCamera(camera);
+//            mMediaRecorder.setOutputFormat(8);
+//            mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
+//            mMediaRecorder.setOutputFile(pdf.getFileDescriptor());
+//            mMediaRecorder.prepare();
             camera.setPreviewTexture(surface);
             camera.startPreview();
         }
@@ -268,7 +311,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        System.out.println("DOING THINGS");
         setContentView(R.layout.common_ui);
         cardboardView = (CardboardView) findViewById(R.id.cardboard_view);
         cardboardView.setRenderer(this);
@@ -466,6 +509,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
     @Override
 	public void onFrameAvailable(SurfaceTexture arg0) {
+        System.out.println(arg0);
 		this.cardboardView.requestRender();
 	}
 
@@ -507,11 +551,11 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         // Disable vertex array
         GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(mTextureCoordHandle);
-
         Matrix.multiplyMM(mView, 0, transform.getEyeView(), 0, mCamera, 0);
 
 
 //        mPositionParam = GLES20.glGetAttribLocation(mGlProgram, "a_Position");
+
 //        mNormalParam = GLES20.glGetAttribLocation(mGlProgram, "a_Normal");
 //        mColorParam = GLES20.glGetAttribLocation(mGlProgram, "a_Color");
 //
