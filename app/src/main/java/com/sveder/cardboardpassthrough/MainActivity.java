@@ -53,23 +53,34 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     private SensorManager mSensorManager;
     private static final String TAG = "MainActivity";
     private static final int GL_TEXTURE_EXTERNAL_OES = 0x8D65;
+    private static final int baseline = 3;  //The base angle for your head
+    private static final int angDiff  = 1;  //The "diff" between the angle and different menu items
     private Camera camera;
+
 
     //SENSOR RELATED STUFF YO
     private final SensorEventListener mSensorListener = new SensorEventListener() {
 
         public void onSensorChanged(SensorEvent se) {
-            float x = se.values[0];
-            float y = se.values[1];
-            float z = se.values[2];
-            System.out.println(se.values[0] + " " + se.values[1] + " " + se.values[2]);
-            //System.out.println("x: " + x + "y: " + y + "z: " + z);
+            float angle = se.values[2];
+            //System.out.println(angle);
+            float menuLine = baseline - angDiff*2;
+            if(angle < menuLine){  //If you are in the "menu item zone"
+                if(angle < menuLine - angDiff * 3){
+                    mOverlayView.setImage(R.drawable.safety_button);
+                }else if(angle < menuLine - angDiff * 2){
+                    mOverlayView.setImage(R.drawable.invert_button);
+                }else if(angle < menuLine - angDiff) {
+                    mOverlayView.setImage(R.drawable.bw_button);
+                }
+
+
+
+            }else{  //Clear the pictures if you are not in the "menu item zone"
+                mOverlayView.setImage(-1);
+            }
         }
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
-            //if (mAccel > 2) {
-            //    Toast toast = Toast.makeText(getApplicationContext(), "x: " + x + "y: " + y + "z: " + z, Toast.LENGTH_LONG);
-            //    toast.show();
-            //}
         }
     };
 

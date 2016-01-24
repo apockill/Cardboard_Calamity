@@ -151,8 +151,13 @@ public class CardboardOverlayView extends LinearLayout {
         }
 
         public void setImage(int img){
-            imageView.setImageResource(img);
+            if(img == -1){
+                imageView.setImageDrawable(null);
+            }else {
+                imageView.setImageResource(img);
+            }
         }
+
         @Override
         protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
             // Width and height of this ViewGroup.
