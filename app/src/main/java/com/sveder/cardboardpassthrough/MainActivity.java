@@ -25,6 +25,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
@@ -33,9 +34,11 @@ import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.vrtoolkit.cardboard.CardboardActivity;
 import com.google.vrtoolkit.cardboard.CardboardView;
 import com.google.vrtoolkit.cardboard.EyeTransform;
@@ -63,8 +66,8 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     private static final float angDiff  = 1.5f;  //The "diff" between the angle and different menu items
     private Camera camera;
     private MediaRecorder mMediaRecorder;
-
-
+    private RequestQueue queue;
+    private Socket socket;
     //SENSOR RELATED STUFF YO
     private final SensorEventListener mSensorListener = new SensorEventListener() {
 
@@ -202,44 +205,95 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         surface = new SurfaceTexture(texture);
         surface.setOnFrameAvailableListener(this);
 
-        camera = Camera.open();
 
-        //mMediaRecorder.setPreviewDisplay(mPrevie)
-        StringRequest request = new StringRequest(Request.Method.POST, "http://52.11.226.33",
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        System.out.println(response);
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                System.out.println(error);
-            }
-        }) {
-            @Override
-            public byte[] getBody() {
-                return "{}".getBytes();
-            }
-        };
+//        //mMediaRecorder.setPreviewDisplay(mPrevie)
+//        StringRequest request = new StringRequest(Request.Method.POST, "http://52.11.226.33/user",
+//                new Response.Listener<String>() {
+//                    @Override
+//                    public void onResponse(String response) {
+//                        System.out.println("My response: " + response);
+//                    }
+//                }, new Response.ErrorListener() {
+//            @Override
+//            public void onErrorResponse(VolleyError error) {
+//                System.out.println("My error: " + error);
+//            }
+//        }) {
+//            @Override
+//            public byte[] getBody() {
+//                return "{}".getBytes();
+//            }
+//
+//        };
+//
+//        queue = Volley.newRequestQueue(this);
+//        queue.add(request);
+//        queue.start();
+
+
 
         try
         {
-//            Socket socket = new Socket("52.11.226.33", 8000);
-//            ParcelFileDescriptor pdf = ParcelFileDescriptor.fromSocket(socket);
+//            System.out.println("Starting connection!");
+//            while (true) {
+//                socket = new Socket("52.11.226.33", 8000);
+//                if (socket != null) {
+//                    break;
+//                }
+//            }
+//            OutputStream outstream = socket.getOutputStream();
+//            PrintWriter out = new PrintWriter(outstream);
+//
+//            System.out.println("Starting Data Stream!");
+//            String message = "";
+//            for(int i = 0; i < 10000; i++) {
+//                out.print("Topkek" + i);
+//                out.flush();
+//                try {
+//                    Thread.sleep(10);
+//                } catch (InterruptedException e) {
+//                    System.out.println("Error" + e);
+//                }
+//            }
+//            out.close();
+
+            camera = Camera.open();
+            //camera.unlock();
+            //CamcorderProfile mProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
+
+            //ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(socket);
+
+//            // 1st state
 //            mMediaRecorder = new MediaRecorder();
-//            camera.unlock();
 //            mMediaRecorder.setCamera(camera);
-//            mMediaRecorder.setOutputFormat(8);
-//            mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.DEFAULT);
-//            mMediaRecorder.setOutputFile(pdf.getFileDescriptor());
+//
+//            // 2nd state
+//            mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+//            mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+//
+//            // 3rd state
+//            mMediaRecorder.setOutputFormat(mProfile.fileFormat);
+//            mMediaRecorder.setAudioEncoder(mProfile.audioCodec);
+//            mMediaRecorder.setVideoEncoder(mProfile.videoCodec);
+//            mMediaRecorder.setOutputFile(pfd.getFileDescriptor());
+//            mMediaRecorder.setVideoSize(mProfile.videoFrameWidth, 1080);
+//            mMediaRecorder.setVideoFrameRate(mProfile.videoFrameRate);
+//            mMediaRecorder.setVideoEncodingBitRate(mProfile.videoBitRate);
+//            mMediaRecorder.setAudioEncodingBitRate(mProfile.audioBitRate);
+//            mMediaRecorder.setAudioChannels(mProfile.audioChannels);
+//
+//            mMediaRecorder.setPreviewDisplay(cardboardView.getHolder().getSurface());
+//
 //            mMediaRecorder.prepare();
+//            mMediaRecorder.start();
+//            System.out.println("Camera Sta            mMediaRecorder.start();rted");
             camera.setPreviewTexture(surface);
             camera.startPreview();
         }
         catch (IOException ioe)
         {
-            Log.w("MainActivity","CAM LAUNCH FAILED");
+            Log.w("MainActivity","CAM LAUNCH FAILED" + ioe.getMessage());
+            ioe.printStackTrace();
         }
     }
 
@@ -311,7 +365,6 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        System.out.println("DOING THINGS");
         setContentView(R.layout.common_ui);
         cardboardView = (CardboardView) findViewById(R.id.cardboard_view);
         cardboardView.setRenderer(this);
@@ -499,9 +552,10 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 //        headTransform.getHeadView(mHeadView, 0);
 //
 //        checkGLError("onReadyToDraw");
-
+        //System.out.println("Lmao" + socket.isConnected());
     	float[] mtx = new float[16];
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+
         surface.updateTexImage();
         surface.getTransformMatrix(mtx);
 
@@ -509,7 +563,6 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
     @Override
 	public void onFrameAvailable(SurfaceTexture arg0) {
-        System.out.println(arg0);
 		this.cardboardView.requestRender();
 	}
 
