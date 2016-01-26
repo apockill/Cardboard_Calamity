@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.sveder.cardboardpassthrough;
+package com.cardboardcrusaders.calamity;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -56,7 +56,6 @@ public class CardboardOverlayView extends LinearLayout {
         addView(mRightView);
 
         // Set some reasonable defaults.
-        setDepthOffset(0.016f);
         setColor(Color.rgb(139, 69, 19));
         setVisibility(View.VISIBLE);
 

@@ -23,7 +23,7 @@
         >
         
         <activity
-            android:name="com.sveder.cardboardpassthrough.MainActivity"
+            android:name="com.cardboardcrusaders.calamity.MainActivity"
             android:label="@string/app_name" 
             android:screenOrientation="landscape">
             <intent-filter>
