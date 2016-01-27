@@ -24,13 +24,21 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.vrtoolkit.cardboard.CardboardActivity;
 import com.google.vrtoolkit.cardboard.CardboardView;
 import com.google.vrtoolkit.cardboard.EyeTransform;
@@ -39,6 +47,7 @@ import com.google.vrtoolkit.cardboard.Viewport;
 import com.sveder.cardboardpassthrough.R;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -47,6 +56,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.List;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -160,93 +170,79 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         surface.setOnFrameAvailableListener(this);
 
 
-//        //mMediaRecorder.setPreviewDisplay(mPrevie)
-//        StringRequest request = new StringRequest(Request.Method.POST, "http://52.11.226.33/user",
-//                new Response.Listener<String>() {
-//                    @Override
-//                    public void onResponse(String response) {
-//                        System.out.println("My response: " + response);
-//                    }
-//                }, new Response.ErrorListener() {
-//            @Override
-//            public void onErrorResponse(VolleyError error) {
-//                System.out.println("My error: " + error);
-//            }
-//        }) {
-//            @Override
-//            public byte[] getBody() {
-//                return "{}".getBytes();
-//            }
-//
-//        };
-//
-//        queue = Volley.newRequestQueue(this);
-//        queue.add(request);
-//        queue.start();
+        StringRequest request = new StringRequest(Request.Method.POST, "http://192.168.1.106:3000/user",
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        System.out.println("My response: " + response);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                System.out.println("My error: " + error);
+            }
+        }) {
+            @Override
+            public byte[] getBody() {
+                return "{}".getBytes();
+            }
+
+        };
+
+        queue = Volley.newRequestQueue(this);
+        queue.add(request);
+        queue.start();
 
 
 
         try
         {
-//            System.out.println("Starting connection!");
-//            while (true) {
-//                socket = new Socket("52.11.226.33", 8000);
-//                if (socket != null) {
-//                    break;
-//                }
-//            }
-//            OutputStream outstream = socket.getOutputStream();
-//            PrintWriter out = new PrintWriter(outstream);
-//
-//            System.out.println("Starting Data Stream!");
-//            String message = "";
-//            for(int i = 0; i < 10000; i++) {
-//                out.print("Topkek" + i);
-//                out.flush();
-//                try {
-//                    Thread.sleep(10);
-//                } catch (InterruptedException e) {
-//                    System.out.println("Error" + e);
-//                }
-//            }
-//            out.close();
+            System.out.println("Starting connection!");
+            while (true) {
+                socket = new Socket("192.168.1.106", 8000);
+                if (socket != null) {
+                    break;
+                }
+            }
 
+            // Create the file path that the video will be saved to
+            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "test.mp4");
+            System.out.println("Start recording: " + file.getAbsolutePath());
+
+            ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(socket);
+
+            // Opens the camera and finds a preview size
             camera = Camera.open();
-            //camera.unlock();
-            //CamcorderProfile mProfile = CamcorderProfile.get(CamcorderProfile.QUALITY_1080P);
+            Camera.Parameters params = camera.getParameters();
+            List<Camera.Size> supportedPreviewSizes = params.getSupportedPreviewSizes();
+            //TODO(velovix): Implement a smarter way to choose the preview size
+            Camera.Size optimalSize = supportedPreviewSizes.get(0);
 
-            //ParcelFileDescriptor pfd = ParcelFileDescriptor.fromSocket(socket);
+            CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
+            profile.videoFrameWidth = optimalSize.width;
+            profile.videoFrameHeight = optimalSize.height;
 
-//            // 1st state
-//            mMediaRecorder = new MediaRecorder();
-//            mMediaRecorder.setCamera(camera);
-//
-//            // 2nd state
-//            mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-//            mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-//
-//            // 3rd state
-//            mMediaRecorder.setOutputFormat(mProfile.fileFormat);
-//            mMediaRecorder.setAudioEncoder(mProfile.audioCodec);
-//            mMediaRecorder.setVideoEncoder(mProfile.videoCodec);
-//            mMediaRecorder.setOutputFile(pfd.getFileDescriptor());
-//            mMediaRecorder.setVideoSize(mProfile.videoFrameWidth, 1080);
-//            mMediaRecorder.setVideoFrameRate(mProfile.videoFrameRate);
-//            mMediaRecorder.setVideoEncodingBitRate(mProfile.videoBitRate);
-//            mMediaRecorder.setAudioEncodingBitRate(mProfile.audioBitRate);
-//            mMediaRecorder.setAudioChannels(mProfile.audioChannels);
-//
-//            mMediaRecorder.setPreviewDisplay(cardboardView.getHolder().getSurface());
-//
-//            mMediaRecorder.prepare();
-//            mMediaRecorder.start();
-//            System.out.println("Camera Sta            mMediaRecorder.start();rted");
+            params.setPreviewSize(profile.videoFrameWidth, profile.videoFrameHeight);
+            camera.setParameters(params);
             camera.setPreviewTexture(surface);
-            camera.startPreview();
+
+            mMediaRecorder = new MediaRecorder();
+            camera.unlock();
+            mMediaRecorder.setCamera(camera);
+
+            mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
+            mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+            mMediaRecorder.setProfile(profile);
+            mMediaRecorder.setOutputFile(pfd.getFileDescriptor());
+
+            mMediaRecorder.prepare();
+            mMediaRecorder.start();
+
+            System.out.println("Finished preparing media recorder");
         }
         catch (IOException ioe)
         {
-            Log.w("MainActivity","CAM LAUNCH FAILED" + ioe.getMessage());
+            Log.w("MainActivity", "Camera launch failed: " + ioe.getMessage());
             ioe.printStackTrace();
         }
     }
@@ -292,7 +288,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
      * Converts a raw text file, saved as a resource, into an OpenGL ES shader
      * @param type The type of shader we will be creating.
      * @param resId The resource ID of the raw text file about to be turned into a shader.
-     * @return
+     * @return the compiled shader
      */
     private int loadGLShader(int type, int resId) throws IOException {
         String code = readTextFromResources(resId);
@@ -321,7 +317,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
     /**
      * Checks if we've had an error inside of OpenGL ES, and if so what that error is.
-     * @param func
+     * @param func the function this is called in
      */
     private static void checkGLError(String func) {
         int error;
@@ -475,13 +471,12 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     public void onFinishFrame(Viewport viewport) {
     }
 
-    /**
-     * Increment the score, hide the object, and give feedback if the user pulls the magnet while
-     * looking at the object. Otherwise, remind the user what to do.
-     */
     @Override
     public void onCardboardTrigger() {
-        mOverlayView.setImage(R.drawable.ic_launcher);
+        System.out.println("Stop recording");
+        mMediaRecorder.reset();
+        mMediaRecorder.release();
+        camera.lock();
     }
 
 }
